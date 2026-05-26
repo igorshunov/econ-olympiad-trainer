@@ -1,84 +1,106 @@
 @startuml
+' Use-case диаграмма EconTrainer.
+' Нотация — по статье "Использование диаграммы вариантов использования UML
+' при проектировании программного обеспечения" (habr.com/ru/articles/566218/).
+'   * Ассоциация (актёр — use-case): СПЛОШНАЯ ЛИНИЯ БЕЗ СТРЕЛКИ.
+'   * Обобщение (наследование акторов): сплошная линия с треугольной стрелкой.
+'   * Включение  <<include>>: пунктирная стрелка ИЗ включающего В включаемый.
+'   * Расширение <<extend>>: пунктирная стрелка ИЗ расширяющего В базовый.
+
 left to right direction
-skinparam packageStyle rectangle
 skinparam shadowing false
+skinparam packageStyle rectangle
 skinparam actor {
   BackgroundColor #FAFAFA
-  BorderColor #555555
+  BorderColor      #555555
+  FontSize         12
 }
 skinparam usecase {
-  BackgroundColor #EFF6FF
-  BorderColor #1D4ED8
-  ArrowColor #1D4ED8
-  FontSize 12
+  BackgroundColor  #EFF6FF
+  BorderColor      #1D4ED8
+  ArrowColor       #1D4ED8
+  FontSize         12
 }
 
-title Тренажёр по олимпиадам по экономике — Use Case диаграмма
+title Тренажёр по олимпиадам по экономике — Use-case диаграмма
 
-actor "Гость" as Guest
-actor "Студент" as Student
-actor "Наставник\n(преподаватель)" as Tutor
-actor "Администратор" as Admin
+actor "Гость"           as Guest
+actor "Студент"         as Student
+actor "Наставник"       as Tutor
+actor "Администратор"   as Admin
 
-Student --|> Guest
-Tutor --|> Student
-Admin --|> Tutor
+Guest  <|-- Student
+Student <|-- Tutor
+Tutor   <|-- Admin
 
-rectangle "Тренажёр" {
-  usecase "Просмотреть граф тем\n(публичный)" as UC_ViewPublicGraph
-  usecase "Зарегистрироваться" as UC_Register
-  usecase "Войти в систему" as UC_Login
-  usecase "Выбрать следующую задачу\n(адаптивный подбор)" as UC_NextTask
-  usecase "Решить задачу" as UC_SolveTask
-  usecase "Сообщить результат\n(решил/не решил/\nслишком просто/\nслишком сложно)" as UC_Feedback
-  usecase "Просмотреть свой\nпрогресс по темам" as UC_ViewProgress
-  usecase "Просмотреть\nграф знаний\n(персональный)" as UC_ViewPersonalGraph
-  usecase "Запустить режим\nконтест" as UC_Contest
-  usecase "Создать группу\nучеников" as UC_CreateGroup
-  usecase "Посмотреть прогресс\nгруппы" as UC_GroupStats
-  usecase "Добавить задачу\nв базу" as UC_AddTask
-  usecase "Разметить тему\nи сложность задачи" as UC_TagTask
-  usecase "Управлять графом\nтем" as UC_ManageGraph
-  usecase "Импортировать\nархив задач" as UC_ImportArchive
+rectangle "Тренажёр (границы системы)" {
+
+  together {
+    usecase "Просмотреть\nграф тем"       as UC_ViewGraph
+    usecase "Зарегистрироваться"          as UC_Register
+    usecase "Войти в систему"             as UC_Login
+  }
+
+  together {
+    usecase "Тренироваться"               as UC_Train
+    usecase "Получить следующую\nрекомендованную задачу" as UC_NextTask
+    usecase "Прочитать условие\nи решить" as UC_Solve
+    usecase "Посмотреть\nразбор задачи"   as UC_Reveal
+    usecase "Сообщить\nрезультат"         as UC_Feedback
+  }
+
+  together {
+    usecase "Просмотреть свой\nпрогресс"  as UC_ViewProgress
+    usecase "Запустить\nрежим контест"    as UC_Contest
+  }
+
+  together {
+    usecase "Создать\nгруппу учеников"    as UC_CreateGroup
+    usecase "Посмотреть\nпрогресс группы" as UC_GroupStats
+    usecase "Добавить задачу\nв базу"     as UC_AddTask
+    usecase "Разметить тему\nи сложность" as UC_Tag
+  }
+
+  together {
+    usecase "Управлять\nграфом тем"       as UC_ManageGraph
+    usecase "Импортировать\nархив задач"  as UC_Import
+  }
 }
 
-Guest --> UC_ViewPublicGraph
-Guest --> UC_Register
+' === Ассоциации (СПЛОШНАЯ ЛИНИЯ БЕЗ СТРЕЛКИ) ===
+Guest   -- UC_ViewGraph
+Guest   -- UC_Register
 
-Student --> UC_Login
-Student --> UC_NextTask
-Student --> UC_SolveTask
-Student --> UC_Feedback
-Student --> UC_ViewProgress
-Student --> UC_ViewPersonalGraph
-Student --> UC_Contest
+Student -- UC_Login
+Student -- UC_Train
+Student -- UC_ViewProgress
+Student -- UC_Contest
 
-Tutor --> UC_CreateGroup
-Tutor --> UC_GroupStats
-Tutor --> UC_AddTask
-Tutor --> UC_TagTask
+Tutor   -- UC_CreateGroup
+Tutor   -- UC_GroupStats
+Tutor   -- UC_AddTask
+Tutor   -- UC_Tag
 
-Admin --> UC_ManageGraph
-Admin --> UC_ImportArchive
+Admin   -- UC_ManageGraph
+Admin   -- UC_Import
 
-UC_NextTask <.. UC_SolveTask : <<include>>
-UC_SolveTask <.. UC_Feedback : <<include>>
-UC_Feedback ..> UC_NextTask : <<extend>>\n(адаптация)
-UC_ImportArchive ..> UC_TagTask : <<include>>
+' === Включение (<<include>>) ===
+UC_Train  ..> UC_NextTask : <<include>>
+UC_Train  ..> UC_Solve    : <<include>>
+UC_Train  ..> UC_Feedback : <<include>>
+UC_Import ..> UC_Tag      : <<include>>
 
-note right of UC_NextTask
-  Подбор основан на mastery
-  пользователя по темам.
-  Берётся тема с mastery ~ 0.5
-  и сложность подходящая под
-  средний уровень пользователя.
-end note
+' === Расширение (<<extend>>) ===
+UC_Reveal ..> UC_Solve    : <<extend>>
 
-note right of UC_Feedback
-  «слишком просто» -> downstream
-  «решил» -> +mastery (умеренно)
-  «не решил» -> -mastery
-  «слишком сложно» -> upstream
+note bottom of UC_Feedback
+  Возможные варианты ответа:
+  * Решил уверенно   — mastery↑ (умеренно)
+  * Слишком просто   — mastery↑↑, downstream
+  * Не смог решить   — mastery↓, к пререквизитам
+  * Слишком сложно   — mastery↓ (слабо), upstream
+  Этот ответ определяет тему и
+  сложность следующей рекомендации.
 end note
 
 @enduml
