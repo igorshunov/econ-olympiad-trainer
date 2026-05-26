@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EconTrainer — адаптивный тренажёр по олимпиадам по экономике</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="card login-card">
+      <h1>EconTrainer</h1>
+      <p class="muted">Адаптивный тренажёр для подготовки к олимпиадам по экономике. Граф тем-пререквизитов автоматически подбирает задачи под ваш уровень.</p>
+
+      <form id="login-form" style="margin-top:16px">
+        <div style="margin-bottom:12px">
+          <label for="name">Имя</label>
+          <input id="name" type="text" required placeholder="Иван Иванов">
+        </div>
+        <div style="margin-bottom:16px">
+          <label for="email">E-mail</label>
+          <input id="email" type="email" required placeholder="ivan@example.com">
+        </div>
+        <button type="submit" class="btn-block">Начать тренировку</button>
+      </form>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:18px 0">
+      <button class="btn-secondary btn-block" id="guest-btn">Продолжить как гость</button>
+
+      <p class="muted" style="margin-top:18px;font-size:12px">
+        Сервис не отправляет данные на внешние серверы. Прогресс хранится локально в вашем браузере. Это демо-версия в рамках учебной практики.
+      </p>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      Storage.setUser({ name, email, joined: Date.now() });
+      window.location.href = "dashboard.html";
+    });
+    document.getElementById("guest-btn").onclick = () => {
+      Storage.setUser({ name: "Гость", email: null, joined: Date.now(), guest: true });
+      window.location.href = "dashboard.html";
+    };
+    // если уже залогинен — сразу на дашборд
+    if (Storage.getUser()) window.location.href = "dashboard.html";
+  </script>
+</body>
+</html>

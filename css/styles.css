@@ -1,0 +1,253 @@
+:root {
+  --bg: #0f172a;
+  --bg-2: #1e293b;
+  --bg-3: #334155;
+  --border: #475569;
+  --text: #f1f5f9;
+  --text-dim: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --success: #10b981;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --mastery-0: #ef4444;
+  --mastery-1: #f59e0b;
+  --mastery-2: #facc15;
+  --mastery-3: #84cc16;
+  --mastery-4: #10b981;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto,
+    Ubuntu, "Helvetica Neue", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* === Header === */
+.app-header {
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.app-header .logo {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--accent);
+  text-decoration: none;
+}
+.app-header nav a {
+  color: var(--text-dim);
+  text-decoration: none;
+  margin-right: 16px;
+  font-size: 14px;
+}
+.app-header nav a.active, .app-header nav a:hover {
+  color: var(--text);
+}
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-3);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+/* === Layout === */
+main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.card h2, .card h3 { margin-top: 0; }
+
+/* === Buttons === */
+button, .btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: inherit;
+}
+button:hover, .btn:hover { background: var(--accent-hover); }
+button:disabled { background: var(--bg-3); color: var(--text-dim); cursor: not-allowed; }
+
+.btn-secondary { background: var(--bg-3); }
+.btn-secondary:hover { background: var(--border); }
+.btn-success { background: var(--success); }
+.btn-warn { background: var(--warn); }
+.btn-danger { background: var(--danger); }
+.btn-block { display: block; width: 100%; }
+
+/* === Forms === */
+input[type=text], input[type=email], input[type=password] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100%;
+  font-family: inherit;
+}
+input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+
+/* === Login === */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 60px);
+  padding: 24px;
+}
+.login-card { max-width: 420px; width: 100%; }
+.login-card h1 { margin-top: 0; }
+
+/* === Task === */
+.task-page { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .task-page { grid-template-columns: 1fr; } }
+
+.task-text { font-size: 16px; line-height: 1.65; }
+.task-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.tag {
+  display: inline-block;
+  background: var(--bg-3);
+  color: var(--text-dim);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tag.difficulty-1 { background: #064e3b; color: #6ee7b7; }
+.tag.difficulty-2 { background: #14532d; color: #86efac; }
+.tag.difficulty-3 { background: #713f12; color: #fcd34d; }
+.tag.difficulty-4 { background: #7c2d12; color: #fdba74; }
+.tag.difficulty-5 { background: #7f1d1d; color: #fca5a5; }
+
+.options { list-style: none; padding: 0; margin: 16px 0 0; }
+.options li {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.options li:hover { border-color: var(--accent); }
+.options li.selected { border-color: var(--accent); background: var(--bg-3); }
+.options li.correct { border-color: var(--success); background: #064e3b40; }
+.options li.wrong { border-color: var(--danger); background: #7f1d1d40; }
+
+.feedback-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.feedback-buttons button { padding: 10px; font-size: 13px; }
+
+/* === Graph === */
+#graph-container {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  height: 580px;
+  width: 100%;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.legend .dot {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* === Progress === */
+.progress-bar {
+  background: var(--bg);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.progress-bar > div {
+  background: var(--accent);
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.topics-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.topic-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.topic-item .name { font-weight: 500; font-size: 14px; margin-bottom: 4px; }
+.topic-item .meta { font-size: 12px; color: var(--text-dim); }
+
+/* === Explanation === */
+.explanation {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #1e3a8a30;
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.muted { color: var(--text-dim); font-size: 13px; }
+
+.toast {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 18px;
+  z-index: 1000;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

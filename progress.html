@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Прогресс — EconTrainer</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="app-header" id="header"></header>
+  <main>
+    <div class="card">
+      <h2>Ваш профиль владения темами</h2>
+      <p class="muted" id="summary"></p>
+      <div class="topics-list" id="topics-list"></div>
+    </div>
+
+    <div class="card">
+      <h3>История попыток</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead>
+          <tr style="text-align:left;border-bottom:1px solid var(--border)">
+            <th style="padding:8px">Время</th>
+            <th style="padding:8px">Тема</th>
+            <th style="padding:8px">Задача</th>
+            <th style="padding:8px">Ответ</th>
+            <th style="padding:8px">Реакция</th>
+          </tr>
+        </thead>
+        <tbody id="history-tbody"></tbody>
+      </table>
+      <p style="margin-top:12px"><button class="btn-secondary" id="reset-btn">Сбросить весь прогресс</button></p>
+    </div>
+  </main>
+
+  <script src="data/topics.js"></script>
+  <script src="data/tasks.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    UI.requireAuth();
+    UI.renderHeader('progress');
+
+    const m = Storage.getMastery();
+    const total = TOPICS.length;
+    const learned = TOPICS.filter(t => (m[t.id] || 0) >= 0.7).length;
+    const inProgress = TOPICS.filter(t => {
+      const v = m[t.id] || 0;
+      return v > 0 && v < 0.7;
+    }).length;
+    document.getElementById('summary').textContent =
+      `Тем всего: ${total}. Освоено: ${learned}. В процессе: ${inProgress}. Не начато: ${total - learned - inProgress}.`;
+
+    const list = document.getElementById('topics-list');
+    TOPICS.forEach(t => {
+      const v = m[t.id] || 0;
+      const div = document.createElement('div');
+      div.className = 'topic-item';
+      div.innerHTML = `
+        <div class="name">${t.name}</div>
+        <div class="meta">Сложность ${t.difficulty}/5 · mastery ${Math.round(v*100)}%</div>
+        <div class="progress-bar"><div style="width:${Math.round(v*100)}%;background:${UI.masteryColor(v)}"></div></div>`;
+      list.appendChild(div);
+    });
+
+    const tbody = document.getElementById('history-tbody');
+    const h = Storage.getHistory();
+    h.slice().reverse().slice(0, 50).forEach(r => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--bg-3)';
+      const topic = TOPICS.find(t => t.id === r.topicId);
+      const actionLabels = {
+        solved: 'решил', too_easy: 'слишком просто',
+        failed: 'не решил', too_hard: 'слишком сложно'
+      };
+      tr.innerHTML = `
+        <td style="padding:6px">${new Date(r.ts).toLocaleString('ru-RU')}</td>
+        <td style="padding:6px">${topic ? topic.name : r.topicId}</td>
+        <td style="padding:6px">${r.taskId}</td>
+        <td style="padding:6px">${r.correct ? '✓' : '✗'}</td>
+        <td style="padding:6px">${actionLabels[r.action] || r.action}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('reset-btn').onclick = () => {
+      if (confirm('Сбросить весь прогресс?')) {
+        Storage.resetProgress();
+        location.reload();
+      }
+    };
+  </script>
+</body>
+</html>
