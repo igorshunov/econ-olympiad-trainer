@@ -1,0 +1,96 @@
+@startuml
+!define table(x) class x << (T,#FFAAAA) >>
+!define pk(x)    <b><color:#0066CC>x</color></b>
+!define fk(x)    <color:#888888>x</color>
+
+hide methods
+hide stereotypes
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #FAFAFA
+  BorderColor #555555
+  AttributeFontSize 11
+  HeaderBackgroundColor #1E3A8A
+  HeaderFontColor #FFFFFF
+}
+
+title EconTrainer — ER-диаграмма
+
+table(users) {
+  pk(user_id) : SERIAL
+  email : VARCHAR(255) UNIQUE
+  password_hash : VARCHAR(255)
+  display_name : VARCHAR(120)
+  role : VARCHAR(20)
+  created_at : TIMESTAMPTZ
+  last_login_at : TIMESTAMPTZ
+}
+
+table(topics) {
+  pk(topic_id) : VARCHAR(40)
+  name : VARCHAR(160)
+  description : TEXT
+  difficulty : SMALLINT (1..5)
+  section : VARCHAR(60)
+}
+
+table(topic_prereqs) {
+  pk(prereq_id) fk(→ topics) : VARCHAR(40)
+  pk(topic_id)  fk(→ topics) : VARCHAR(40)
+}
+
+table(sources) {
+  pk(source_id) : SERIAL
+  title : VARCHAR(200)
+  organization : VARCHAR(120)
+  year : SMALLINT
+  url : VARCHAR(500)
+}
+
+table(tasks) {
+  pk(task_id) : SERIAL
+  title : VARCHAR(200)
+  body_md : TEXT
+  answer : TEXT
+  explanation : TEXT
+  difficulty : SMALLINT (1..5)
+  type : VARCHAR(20)
+  fk(source_id → sources) : INTEGER
+  created_at : TIMESTAMPTZ
+}
+
+table(task_topics) {
+  pk(task_id)  fk(→ tasks)  : INTEGER
+  pk(topic_id) fk(→ topics) : VARCHAR(40)
+  is_primary : BOOLEAN
+}
+
+table(user_mastery) {
+  pk(user_id)  fk(→ users)  : INTEGER
+  pk(topic_id) fk(→ topics) : VARCHAR(40)
+  mastery : REAL (0..1)
+  updated_at : TIMESTAMPTZ
+}
+
+table(attempts) {
+  pk(attempt_id) : BIGSERIAL
+  fk(user_id → users) : INTEGER
+  fk(task_id → tasks) : INTEGER
+  submitted_at : TIMESTAMPTZ
+  is_correct : BOOLEAN
+  feedback : VARCHAR(20)
+  time_spent_s : INTEGER
+}
+
+' Relationships
+users        ||--o{ user_mastery
+users        ||--o{ attempts
+topics       ||--o{ topic_prereqs : "is prereq of"
+topics       ||--o{ topic_prereqs : "has prereq"
+topics       ||--o{ task_topics
+topics       ||--o{ user_mastery
+tasks        ||--o{ task_topics
+tasks        ||--o{ attempts
+sources      ||--o{ tasks
+
+@enduml

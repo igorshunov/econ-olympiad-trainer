@@ -1,0 +1,84 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actor {
+  BackgroundColor #FAFAFA
+  BorderColor #555555
+}
+skinparam usecase {
+  BackgroundColor #EFF6FF
+  BorderColor #1D4ED8
+  ArrowColor #1D4ED8
+  FontSize 12
+}
+
+title Тренажёр по олимпиадам по экономике — Use Case диаграмма
+
+actor "Гость" as Guest
+actor "Студент" as Student
+actor "Наставник\n(преподаватель)" as Tutor
+actor "Администратор" as Admin
+
+Student --|> Guest
+Tutor --|> Student
+Admin --|> Tutor
+
+rectangle "Тренажёр" {
+  usecase "Просмотреть граф тем\n(публичный)" as UC_ViewPublicGraph
+  usecase "Зарегистрироваться" as UC_Register
+  usecase "Войти в систему" as UC_Login
+  usecase "Выбрать следующую задачу\n(адаптивный подбор)" as UC_NextTask
+  usecase "Решить задачу" as UC_SolveTask
+  usecase "Сообщить результат\n(решил/не решил/\nслишком просто/\nслишком сложно)" as UC_Feedback
+  usecase "Просмотреть свой\nпрогресс по темам" as UC_ViewProgress
+  usecase "Просмотреть\nграф знаний\n(персональный)" as UC_ViewPersonalGraph
+  usecase "Запустить режим\nконтест" as UC_Contest
+  usecase "Создать группу\nучеников" as UC_CreateGroup
+  usecase "Посмотреть прогресс\nгруппы" as UC_GroupStats
+  usecase "Добавить задачу\nв базу" as UC_AddTask
+  usecase "Разметить тему\nи сложность задачи" as UC_TagTask
+  usecase "Управлять графом\nтем" as UC_ManageGraph
+  usecase "Импортировать\nархив задач" as UC_ImportArchive
+}
+
+Guest --> UC_ViewPublicGraph
+Guest --> UC_Register
+
+Student --> UC_Login
+Student --> UC_NextTask
+Student --> UC_SolveTask
+Student --> UC_Feedback
+Student --> UC_ViewProgress
+Student --> UC_ViewPersonalGraph
+Student --> UC_Contest
+
+Tutor --> UC_CreateGroup
+Tutor --> UC_GroupStats
+Tutor --> UC_AddTask
+Tutor --> UC_TagTask
+
+Admin --> UC_ManageGraph
+Admin --> UC_ImportArchive
+
+UC_NextTask <.. UC_SolveTask : <<include>>
+UC_SolveTask <.. UC_Feedback : <<include>>
+UC_Feedback ..> UC_NextTask : <<extend>>\n(адаптация)
+UC_ImportArchive ..> UC_TagTask : <<include>>
+
+note right of UC_NextTask
+  Подбор основан на mastery
+  пользователя по темам.
+  Берётся тема с mastery ~ 0.5
+  и сложность подходящая под
+  средний уровень пользователя.
+end note
+
+note right of UC_Feedback
+  «слишком просто» -> downstream
+  «решил» -> +mastery (умеренно)
+  «не решил» -> -mastery
+  «слишком сложно» -> upstream
+end note
+
+@enduml
