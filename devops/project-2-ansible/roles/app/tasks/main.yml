@@ -1,0 +1,51 @@
+# Деплой стека EconTrainer через docker compose.
+- name: Ensure /opt/econtrainer exists
+  ansible.builtin.file:
+    path: /opt/econtrainer
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Render docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/econtrainer/docker-compose.yml
+    owner: "{{ ansible_user }}"
+    mode: '0644'
+  notify: Recreate stack
+
+- name: Render .env (никогда не коммитим — генерируется на хосте)
+  ansible.builtin.template:
+    src: env.j2
+    dest: /opt/econtrainer/.env
+    owner: "{{ ansible_user }}"
+    mode: '0600'      # секреты — read только владелец
+  notify: Recreate stack
+
+- name: Render Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: /opt/econtrainer/Caddyfile
+    owner: "{{ ansible_user }}"
+    mode: '0644'
+  notify: Recreate stack
+
+- name: Pull images
+  community.docker.docker_compose_v2_pull:
+    project_src: /opt/econtrainer
+
+- name: Bring stack up
+  community.docker.docker_compose_v2:
+    project_src: /opt/econtrainer
+    state: present
+    pull: missing
+
+- name: Wait for app to be healthy
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ app_port }}/healthz"
+    status_code: 200
+  register: app_healthcheck
+  retries: 10
+  delay: 3
+  until: app_healthcheck.status == 200

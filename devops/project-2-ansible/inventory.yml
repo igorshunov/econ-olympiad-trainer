@@ -1,0 +1,24 @@
+# Inventory для деплоя EconTrainer.
+# Пример с двумя средами: staging (1 хост) и production (2 хоста за балансировщиком).
+all:
+  vars:
+    ansible_user: deploy
+    ansible_ssh_private_key_file: ~/.ssh/econ_deploy_id_ed25519
+    ansible_python_interpreter: /usr/bin/python3
+    app_image: ghcr.io/igorshunov/econtrainer
+    app_tag:  "{{ lookup('env','APP_TAG') | default('latest', true) }}"
+    domain:   econ.example.ru
+  children:
+    staging:
+      hosts:
+        staging-1.example.ru:
+          ansible_host: 10.20.30.41
+    production:
+      hosts:
+        prod-app-1.example.ru:
+          ansible_host: 10.20.30.51
+        prod-app-2.example.ru:
+          ansible_host: 10.20.30.52
+      vars:
+        backup_enabled: true
+        monitoring_enabled: true

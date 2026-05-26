@@ -1,0 +1,9 @@
+all:
+  children:
+    ${env}:
+      hosts:
+%{ for h in hosts ~}
+        ${h.name}:
+          ansible_host: ${h.ip}
+          ansible_user: deploy
+%{ endfor ~}

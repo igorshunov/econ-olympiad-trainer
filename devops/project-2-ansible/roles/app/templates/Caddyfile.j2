@@ -1,0 +1,20 @@
+{
+    email {{ acme_email }}
+}
+
+{{ domain }} {
+    encode gzip zstd
+    reverse_proxy econtrainer:80
+
+    # Security headers (helmet-эквивалент)
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+    log {
+        output stdout
+        format json
+    }
+}

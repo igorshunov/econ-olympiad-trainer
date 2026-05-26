@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Граф знаний — EconTrainer</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+</head>
+<body>
+  <header class="app-header" id="header"></header>
+  <main>
+    <div class="card">
+      <h2>Граф тем по экономике</h2>
+      <p class="muted">Цвет узла — ваше владение темой (mastery). Стрелки = «нужно знать, чтобы изучать». Кликните на узел, чтобы посмотреть тему или сразу начать задачу.</p>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--mastery-0)"></span>не знаком</span>
+        <span><span class="dot" style="background:var(--mastery-1)"></span>слабо</span>
+        <span><span class="dot" style="background:var(--mastery-2)"></span>средне</span>
+        <span><span class="dot" style="background:var(--mastery-3)"></span>хорошо</span>
+        <span><span class="dot" style="background:var(--mastery-4)"></span>отлично</span>
+      </div>
+      <div id="graph-container"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+          <h3 style="margin:0">Готовы тренироваться?</h3>
+          <p class="muted" style="margin:6px 0 0">Система автоматически выберет тему и задачу под ваш уровень.</p>
+        </div>
+        <a href="task.html" class="btn">Следующая задача →</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
+  <script src="data/topics.js"></script>
+  <script src="data/tasks.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+  (async () => {
+    const user = await UI.requireAuth();
+    if (!user) return;
+    await UI.renderHeader('dashboard', user);
+    await Engine.preload();
+
+    // Build cytoscape graph (using built-in breadthfirst layout — no extra deps)
+    const elements = [];
+    TOPICS.forEach(t => {
+      const m = Engine.getMastery(t.id);
+      elements.push({
+        data: { id: t.id, label: t.name, mastery: m, difficulty: t.difficulty },
+        classes: 'topic-node'
+      });
+      t.prereq.forEach(p => {
+        elements.push({ data: { source: p, target: t.id } });
+      });
+    });
+
+    const cy = cytoscape({
+      container: document.getElementById('graph-container'),
+      elements,
+      layout: {
+        name: 'cose',
+        idealEdgeLength: 100,
+        nodeOverlap: 20,
+        refresh: 20,
+        fit: true,
+        padding: 40,
+        randomize: false,
+        componentSpacing: 100,
+        nodeRepulsion: 400000,
+        edgeElasticity: 100,
+        nestingFactor: 5,
+        gravity: 80,
+        numIter: 2000,
+        initialTemp: 200,
+        coolingFactor: 0.95,
+        minTemp: 1.0,
+        animate: false
+      },
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'background-color': ele => {
+              const m = ele.data('mastery');
+              if (m < 0.2) return '#ef4444';
+              if (m < 0.4) return '#f59e0b';
+              if (m < 0.6) return '#facc15';
+              if (m < 0.8) return '#84cc16';
+              return '#10b981';
+            },
+            'label': 'data(label)',
+            'color': '#f1f5f9',
+            'text-wrap': 'wrap',
+            'text-max-width': 140,
+            'font-size': 11,
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'text-outline-color': '#0f172a',
+            'text-outline-width': 2,
+            'width': 'label',
+            'height': 'label',
+            'padding': '10px',
+            'shape': 'round-rectangle',
+            'border-width': 2,
+            'border-color': '#0f172a',
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'curve-style': 'bezier',
+            'target-arrow-shape': 'triangle',
+            'line-color': '#475569',
+            'target-arrow-color': '#475569',
+            'width': 1.5,
+          }
+        },
+        {
+          selector: 'node:selected',
+          style: { 'border-color': '#3b82f6', 'border-width': 4 }
+        }
+      ]
+    });
+
+    cy.on('tap', 'node', (e) => {
+      const id = e.target.id();
+      // Сохраняем выбор и переходим к задаче
+      sessionStorage.setItem('next_topic', id);
+      window.location.href = 'task.html';
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Глобальные переменные для всех хостов.
+app_image: ghcr.io/igorshunov/econtrainer
+app_tag:   "{{ lookup('env','APP_TAG') | default('latest', true) }}"
+domain:    econ.example.ru
+
+# Порт на host, на который слушает приложение (за reverse-proxy).
+app_port:  8090
+
+# PostgreSQL.
+postgres_image: postgres:16-alpine
+postgres_db:    econtrainer
+postgres_user:  app
+# Пароль читается из Ansible Vault (см. group_vars/all.vault.yml в реальном проекте).
+postgres_password: "{{ vault_postgres_password | default('CHANGE_ME_IN_VAULT') }}"
+
+# Reverse-proxy (Caddy + ACME).
+caddy_image: caddy:2.10-alpine
+acme_email:  igorshunov@example.com
+http_port:   80
+https_port:  443
+
+# Опции окружения.
+backup_enabled:     false
+monitoring_enabled: false

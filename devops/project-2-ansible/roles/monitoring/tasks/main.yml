@@ -1,0 +1,20 @@
+# Минимальный мониторинг: node-exporter + Prometheus + Grafana
+# поднимаются как отдельный docker-compose в /opt/monitoring.
+- name: Ensure /opt/monitoring exists
+  ansible.builtin.file:
+    path: /opt/monitoring
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Render monitoring compose
+  ansible.builtin.template:
+    src: monitoring-compose.yml.j2
+    dest: /opt/monitoring/docker-compose.yml
+    mode: '0644'
+  notify: Recreate monitoring
+
+- name: Bring monitoring stack up
+  community.docker.docker_compose_v2:
+    project_src: /opt/monitoring
+    state: present

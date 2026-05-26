@@ -1,0 +1,23 @@
+# Скопируйте этот файл в terraform.tfvars и подставьте свои значения.
+# terraform.tfvars В .gitignore — не коммитим секреты.
+
+# Yandex Cloud
+yc_cloud_id  = "b1xxxxxxxxxxxxxxxxxx"
+yc_folder_id = "b1xxxxxxxxxxxxxxxxxx"
+yc_zone      = "ru-central1-a"
+
+# Среда
+env = "staging"
+
+# Размер кластера
+instance_count       = 1
+instance_cores       = 2
+instance_memory_gb   = 4
+instance_disk_gb     = 20
+instance_preemptible = true
+
+# Публичный ключ deploy-пользователя
+ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII... deploy@econtrainer"
+
+# Домен (для DNS-записей и TLS)
+domain = "econ.example.ru"

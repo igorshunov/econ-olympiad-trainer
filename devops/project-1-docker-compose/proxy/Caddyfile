@@ -1,0 +1,18 @@
+# Caddy 2 — обратный прокси + автоматический HTTPS (для production-домена).
+# В dev/локально достаточно :80.
+{
+    # Email для Let's Encrypt — в production переопределите через env.
+    email igorshunov@example.com
+}
+
+# Локальный/dev режим: HTTP только
+:80 {
+    encode gzip
+    reverse_proxy econtrainer:80
+}
+
+# Production-режим: при наличии переменной DOMAIN включается ACME.
+# (домен.example.com) {
+#     encode gzip zstd
+#     reverse_proxy econtrainer:80
+# }

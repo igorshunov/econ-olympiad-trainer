@@ -1,0 +1,26 @@
+services:
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    restart: unless-stopped
+    ports: ["9090:9090"]
+    volumes:
+      - prom_data:/prometheus
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    pid: host
+    network_mode: host
+    volumes:
+      - /:/host:ro,rslave
+    command: ["--path.rootfs=/host"]
+  grafana:
+    image: grafana/grafana-oss:11.4.0
+    restart: unless-stopped
+    ports: ["3000:3000"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "{{ vault_grafana_password | default('admin') }}"
+    volumes:
+      - grafana_data:/var/lib/grafana
+volumes:
+  prom_data: {}
+  grafana_data: {}

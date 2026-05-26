@@ -1,0 +1,52 @@
+# Главный playbook деплоя EconTrainer.
+# Цель — взять чистый Linux-хост (Ubuntu 22.04+) и развернуть на нём
+# готовый к работе стек EconTrainer + БД + reverse-proxy + мониторинг.
+- name: Deploy EconTrainer stack
+  hosts: all
+  become: true
+  gather_facts: true
+  vars_files:
+    - group_vars/all.yml
+  pre_tasks:
+    - name: Apt cache update (raz v sutki)
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 86400
+      changed_when: false
+
+    - name: Ensure baseline packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - python3-docker
+          - jq
+        state: present
+
+  roles:
+    - role: docker
+      tags: [docker]
+    - role: app
+      tags: [app]
+    - role: monitoring
+      when: monitoring_enabled | default(false)
+      tags: [monitoring]
+
+  post_tasks:
+    - name: Smoke-test /healthz
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:8090/healthz"
+        status_code: 200
+      register: smoke
+      retries: 5
+      delay: 3
+      until: smoke.status == 200
+
+    - name: Show deployment summary
+      ansible.builtin.debug:
+        msg:
+          - "✅ Stack deployed on {{ inventory_hostname }}"
+          - "App tag: {{ app_tag }}"
+          - "Domain: {{ domain }}"
+          - "Health: {{ smoke.json | default('ok') }}"

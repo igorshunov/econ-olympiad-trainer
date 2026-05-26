@@ -1,0 +1,30 @@
+econtrainer  | 2026/05/26 18:30:52 [notice] 1#1: start worker process 37
+econtrainer  | 2026/05/26 18:30:52 [notice] 1#1: start worker process 38
+econtrainer  | 2026/05/26 18:30:52 [notice] 1#1: start worker process 39
+econtrainer  | 2026/05/26 18:30:52 [notice] 1#1: start worker process 40
+econtrainer  | 172.18.0.4 - - [26/May/2026:18:31:00 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/8.18.0" "172.18.0.1"
+econtrainer  | 172.18.0.4 - - [26/May/2026:18:31:01 +0000] "GET /healthz HTTP/1.1" 200 3 "-" "curl/8.18.0" "172.18.0.1"
+econtrainer  | 172.18.0.4 - - [26/May/2026:18:31:14 +0000] "GET / HTTP/1.1" 200 2403 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.0.0 Safari/537.36" "172.18.0.1"
+econtrainer  | 172.18.0.4 - - [26/May/2026:18:31:14 +0000] "GET /css/styles.css HTTP/1.1" 301 169 "http://localhost:8090/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.0.0 Safari/537.36" "172.18.0.1"
+econtrainer  | 172.18.0.4 - - [26/May/2026:18:31:14 +0000] "GET /js/storage.js HTTP/1.1" 200 992 "http://localhost:8090/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.0.0 Safari/537.36" "172.18.0.1"
+econtrainer  | 172.18.0.4 - - [26/May/2026:18:31:14 +0000] "GET /favicon.ico HTTP/1.1" 200 2403 "http://localhost:8090/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.0.0 Safari/537.36" "172.18.0.1"
+econtrainer-db  | 
+econtrainer-db  | 2026-05-26 18:30:42.915 UTC [1] LOG:  starting PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+econtrainer-db  | 2026-05-26 18:30:42.915 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+econtrainer-db  | 2026-05-26 18:30:42.915 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+econtrainer-db  | 2026-05-26 18:30:42.919 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+econtrainer-db  | 2026-05-26 18:30:42.925 UTC [59] LOG:  database system was shut down at 2026-05-26 18:30:42 UTC
+econtrainer-db  | 2026-05-26 18:30:42.936 UTC [1] LOG:  database system is ready to accept connections
+econtrainer-db  | 2026-05-26 18:30:51.528 UTC [68] FATAL:  database "app" does not exist
+econtrainer-db  | 2026-05-26 18:31:01.590 UTC [75] FATAL:  database "app" does not exist
+econtrainer-db  | 2026-05-26 18:31:11.632 UTC [83] FATAL:  database "app" does not exist
+econtrainer-proxy  | {"level":"info","ts":1779820252.8366778,"logger":"admin","msg":"admin endpoint started","address":"localhost:2019","enforce_origin":false,"origins":["//localhost:2019","//[::1]:2019","//127.0.0.1:2019"]}
+econtrainer-proxy  | {"level":"warn","ts":1779820252.8367977,"logger":"http.auto_https","msg":"server is listening only on the HTTP port, so no automatic HTTPS will be applied to this server","server_name":"srv0","http_port":80}
+econtrainer-proxy  | {"level":"info","ts":1779820252.836878,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc0006e2480"}
+econtrainer-proxy  | {"level":"warn","ts":1779820252.836971,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":80"}
+econtrainer-proxy  | {"level":"warn","ts":1779820252.8369777,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":80"}
+econtrainer-proxy  | {"level":"info","ts":1779820252.8369808,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+econtrainer-proxy  | {"level":"info","ts":1779820252.8370783,"msg":"autosaved config (load with --resume flag)","file":"/config/caddy/autosave.json"}
+econtrainer-proxy  | {"level":"info","ts":1779820252.8370862,"msg":"serving initial configuration"}
+econtrainer-proxy  | {"level":"info","ts":1779820252.8389943,"logger":"tls","msg":"cleaning storage unit","storage":"FileStorage:/data/caddy"}
+econtrainer-proxy  | {"level":"info","ts":1779820252.8406038,"logger":"tls","msg":"finished cleaning storage units"}
