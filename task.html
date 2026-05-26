@@ -16,19 +16,19 @@
             <span class="tag" id="topic-tag"></span>
             <span class="tag" id="diff-tag"></span>
             <span class="tag" id="mastery-tag"></span>
+            <span class="tag" id="source-tag"></span>
           </div>
           <div class="task-text" id="task-text"></div>
-          <ul class="options" id="options"></ul>
-          <div id="explanation-box"></div>
-          <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-            <button id="submit-btn">Проверить ответ</button>
+          <div id="solution-box"></div>
+          <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
+            <button id="reveal-btn">Показать разбор</button>
             <button class="btn-secondary" id="skip-btn">Пропустить →</button>
           </div>
         </div>
 
         <div class="card" id="feedback-card" style="display:none">
           <h3>Как для вас была эта задача?</h3>
-          <p class="muted">Ваш ответ настроит подбор следующих задач.</p>
+          <p class="muted">Решали на бумаге. Оцените сами — это настроит подбор следующих задач.</p>
           <div class="feedback-buttons">
             <button class="btn-success" data-action="solved">✓ Решил уверенно</button>
             <button class="btn-warn" data-action="too_easy">↑ Слишком просто</button>
@@ -52,66 +52,64 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
   <script src="data/topics.js"></script>
   <script src="data/tasks.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/engine.js"></script>
   <script src="js/ui.js"></script>
   <script>
-    UI.requireAuth();
-    UI.renderHeader('task');
+  (async () => {
+    const user = await UI.requireAuth();
+    if (!user) return;
+    await UI.renderHeader('task', user);
+    await Engine.preload();
 
     let currentTask = null;
     let currentTopic = null;
-    let selected = -1;
-    let answered = false;
+    let revealed = false;
 
-    function loadNext(prefer) {
-      // Если выбрана тема из дашборда — использовать её один раз
+    async function loadNext(prefer) {
       const chosen = sessionStorage.getItem('next_topic');
       let task, topic;
       if (chosen) {
         sessionStorage.removeItem('next_topic');
         topic = Engine.topicById(chosen);
-        const recent = Storage.getHistory().slice(-5).map(h => h.taskId);
+        const hist = await Storage.getHistory();
+        const recent = hist.slice(-5).map(h => h.taskId);
         task = Engine.pickTask(chosen, recent);
       } else {
-        ({ topic, task } = Engine.nextRecommendation(prefer));
+        ({ topic, task } = await Engine.nextRecommendation(prefer));
       }
       currentTask = task;
       currentTopic = topic;
-      selected = -1;
-      answered = false;
-      renderTask();
+      revealed = false;
+      await renderTask();
     }
 
-    function renderTask() {
+    async function renderTask() {
       document.getElementById('topic-tag').textContent = currentTopic.name;
       document.getElementById('diff-tag').textContent = 'Сложность ' + currentTask.difficulty + '/5';
       document.getElementById('diff-tag').className = 'tag difficulty-' + currentTask.difficulty;
       const m = Engine.getMastery(currentTopic.id);
       document.getElementById('mastery-tag').textContent = 'Mastery: ' + Math.round(m*100) + '%';
 
-      document.getElementById('task-text').textContent = currentTask.text;
-      const ul = document.getElementById('options');
-      ul.innerHTML = '';
-      currentTask.options.forEach((opt, i) => {
-        const li = document.createElement('li');
-        li.textContent = opt;
-        li.onclick = () => {
-          if (answered) return;
-          [...ul.children].forEach(c => c.classList.remove('selected'));
-          li.classList.add('selected');
-          selected = i;
-        };
-        ul.appendChild(li);
-      });
-      document.getElementById('explanation-box').innerHTML = '';
-      document.getElementById('feedback-card').style.display = 'none';
-      document.getElementById('submit-btn').disabled = false;
-      document.getElementById('submit-btn').textContent = 'Проверить ответ';
+      // Source tag
+      const srcTag = document.getElementById('source-tag');
+      if (currentTask.source) {
+        const s = currentTask.source;
+        srcTag.textContent = `${s.olympiad}-${s.year}, ${s.stage}${s.grade ? ', ' + s.grade + ' кл.' : ''}`;
+        srcTag.style.display = '';
+      } else {
+        srcTag.style.display = 'none';
+      }
 
-      // hints
+      document.getElementById('task-text').textContent = currentTask.text;
+      document.getElementById('solution-box').innerHTML = '';
+      document.getElementById('feedback-card').style.display = 'none';
+      document.getElementById('reveal-btn').disabled = false;
+      document.getElementById('reveal-btn').textContent = 'Показать разбор';
+
       const prereqs = Engine.upstream(currentTopic.id).map(p => Engine.topicById(p).name);
       document.getElementById('prereq-hint').textContent = prereqs.length
         ? "Эта тема опирается на: " + prereqs.join(", ")
@@ -121,47 +119,47 @@
         ? "Дальше она ведёт к: " + downs.join(", ")
         : "Это узловая тема (нет downstream).";
 
-      // session stats
-      const h = Storage.getHistory();
+      const h = await Storage.getHistory();
       const today = h.filter(x => Date.now() - x.ts < 86400000);
       document.getElementById('session-stats').textContent =
         "Решено за 24ч: " + today.length + " задач(и)";
     }
 
-    document.getElementById('submit-btn').onclick = () => {
-      if (answered) { loadNext(); return; }
-      if (selected < 0) { UI.toast('Выберите вариант ответа'); return; }
-      answered = true;
-      const ul = document.getElementById('options');
-      const correctIdx = currentTask.answer;
-      [...ul.children].forEach((li, i) => {
-        if (i === correctIdx) li.classList.add('correct');
-        else if (i === selected) li.classList.add('wrong');
-      });
-      const isCorrect = selected === correctIdx;
-      const exp = document.getElementById('explanation-box');
-      exp.innerHTML = `<div class="explanation">
-        <b>${isCorrect ? '✓ Верно!' : '✗ Не совсем. Правильный ответ: ' + (correctIdx+1)}</b><br>
-        ${currentTask.explanation}
-      </div>`;
-      document.getElementById('submit-btn').textContent = 'Следующая задача →';
+    document.getElementById('reveal-btn').onclick = () => {
+      if (revealed) { loadNext(); return; }
+      revealed = true;
+      const box = document.getElementById('solution-box');
+      const ans = currentTask.answer
+        ? `<div class="explanation"><b>Ответ:</b> ${escapeHtml(currentTask.answer)}</div>`
+        : '';
+      const sol = currentTask.solution
+        ? `<div class="explanation" style="background:#0f3a1f30;border-left-color:#10b981;white-space:pre-wrap">${escapeHtml(currentTask.solution)}</div>`
+        : '';
+      box.innerHTML = ans + sol;
+      document.getElementById('reveal-btn').textContent = 'Следующая задача →';
       document.getElementById('feedback-card').style.display = 'block';
-      // Запомним правильность для feedback
-      window._wasCorrect = isCorrect;
     };
 
     document.getElementById('skip-btn').onclick = () => loadNext();
 
     document.querySelectorAll('#feedback-card button').forEach(btn => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const action = btn.dataset.action;
-        const prefer = Engine.recordAttempt(currentTask.id, currentTopic.id, action, window._wasCorrect);
+        const prefer = await Engine.recordAttempt(
+          currentTask.id, currentTopic.id, action, null);
         UI.toast('Прогресс сохранён');
-        loadNext(prefer);
+        await loadNext(prefer);
       };
     });
 
-    loadNext();
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+
+    await loadNext();
+  })();
   </script>
 </body>
 </html>

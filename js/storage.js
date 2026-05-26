@@ -1,39 +1,62 @@
-// Тонкая прослойка над localStorage — храним пользователя и mastery.
+// Persistent storage. Использует IndexedDB через тонкую обёртку
+// (idb-keyval подгружается из CDN в html). Fallback на localStorage,
+// если IndexedDB недоступен (приватный режим в некоторых браузерах).
 window.Storage = (() => {
-  const KEY_USER = "ot_user";
-  const KEY_MASTERY = "ot_mastery";
-  const KEY_HISTORY = "ot_history";
+  const NS = 'econtrainer';
+  const KEY_USER = 'user';
+  const KEY_MASTERY = 'mastery';
+  const KEY_HISTORY = 'history';
 
-  function getUser() {
-    const raw = localStorage.getItem(KEY_USER);
-    return raw ? JSON.parse(raw) : null;
-  }
-  function setUser(u) { localStorage.setItem(KEY_USER, JSON.stringify(u)); }
-  function clearUser() { localStorage.removeItem(KEY_USER); }
-
-  function getMastery() {
-    const raw = localStorage.getItem(KEY_MASTERY);
-    return raw ? JSON.parse(raw) : {};
-  }
-  function setMastery(m) { localStorage.setItem(KEY_MASTERY, JSON.stringify(m)); }
-
-  function getHistory() {
-    const raw = localStorage.getItem(KEY_HISTORY);
-    return raw ? JSON.parse(raw) : [];
-  }
-  function appendHistory(record) {
-    const h = getHistory();
-    h.push(record);
-    localStorage.setItem(KEY_HISTORY, JSON.stringify(h));
+  // idbKeyval должен быть глобально доступен (см. <script src="...idb-keyval...">)
+  const useIdb = typeof idbKeyval !== 'undefined';
+  let store = null;
+  if (useIdb) {
+    store = idbKeyval.createStore(NS, 'kv');
   }
 
-  function resetProgress() {
-    localStorage.removeItem(KEY_MASTERY);
-    localStorage.removeItem(KEY_HISTORY);
+  async function get(key, fallback) {
+    try {
+      if (useIdb) {
+        const v = await idbKeyval.get(key, store);
+        return v === undefined ? fallback : v;
+      }
+    } catch (e) { console.warn('IndexedDB get failed:', e); }
+    const raw = localStorage.getItem(NS + ':' + key);
+    return raw ? JSON.parse(raw) : fallback;
+  }
+  async function set(key, value) {
+    try {
+      if (useIdb) { await idbKeyval.set(key, value, store); return; }
+    } catch (e) { console.warn('IndexedDB set failed:', e); }
+    localStorage.setItem(NS + ':' + key, JSON.stringify(value));
+  }
+  async function del(key) {
+    try {
+      if (useIdb) { await idbKeyval.del(key, store); return; }
+    } catch (e) { /* */ }
+    localStorage.removeItem(NS + ':' + key);
   }
 
-  return { getUser, setUser, clearUser,
-           getMastery, setMastery,
-           getHistory, appendHistory,
-           resetProgress };
+  return {
+    async getUser()      { return await get(KEY_USER, null); },
+    async setUser(u)     { await set(KEY_USER, u); },
+    async clearUser()    { await del(KEY_USER); },
+
+    async getMastery()   { return await get(KEY_MASTERY, {}); },
+    async setMastery(m)  { await set(KEY_MASTERY, m); },
+
+    async getHistory()   { return await get(KEY_HISTORY, []); },
+    async appendHistory(rec) {
+      const h = await get(KEY_HISTORY, []);
+      h.push(rec);
+      await set(KEY_HISTORY, h);
+    },
+
+    async resetProgress() {
+      await del(KEY_MASTERY);
+      await del(KEY_HISTORY);
+    },
+
+    backend: useIdb ? 'IndexedDB' : 'localStorage',
+  };
 })();
