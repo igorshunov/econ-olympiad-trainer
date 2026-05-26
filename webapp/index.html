@@ -28,26 +28,30 @@
       <button class="btn-secondary btn-block" id="guest-btn">Продолжить как гость</button>
 
       <p class="muted" style="margin-top:18px;font-size:12px">
-        Сервис не отправляет данные на внешние серверы. Прогресс хранится локально в вашем браузере. Это демо-версия в рамках учебной практики.
+        Демо-версия в рамках учебной практики. Прогресс сохраняется в локальной БД браузера (IndexedDB) — пережилёт перезагрузку и закрытие вкладки, на сервер ничего не отправляется. В production-версии данные синхронизируются с PostgreSQL.
       </p>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
   <script src="js/storage.js"></script>
   <script>
-    document.getElementById("login-form").addEventListener("submit", (e) => {
+    (async () => {
+      // если уже залогинен — сразу на дашборд
+      const u = await Storage.getUser();
+      if (u) { window.location.href = "dashboard.html"; return; }
+    })();
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const name = document.getElementById("name").value.trim();
       const email = document.getElementById("email").value.trim();
-      Storage.setUser({ name, email, joined: Date.now() });
+      await Storage.setUser({ name, email, joined: Date.now() });
       window.location.href = "dashboard.html";
     });
-    document.getElementById("guest-btn").onclick = () => {
-      Storage.setUser({ name: "Гость", email: null, joined: Date.now(), guest: true });
+    document.getElementById("guest-btn").onclick = async () => {
+      await Storage.setUser({ name: "Гость", email: null, joined: Date.now(), guest: true });
       window.location.href = "dashboard.html";
     };
-    // если уже залогинен — сразу на дашборд
-    if (Storage.getUser()) window.location.href = "dashboard.html";
   </script>
 </body>
 </html>

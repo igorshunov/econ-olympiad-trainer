@@ -33,16 +33,19 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
   <script src="data/topics.js"></script>
   <script src="data/tasks.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/engine.js"></script>
   <script src="js/ui.js"></script>
   <script>
-    UI.requireAuth();
-    UI.renderHeader('progress');
+  (async () => {
+    const user = await UI.requireAuth();
+    if (!user) return;
+    await UI.renderHeader('progress', user);
 
-    const m = Storage.getMastery();
+    const m = await Storage.getMastery();
     const total = TOPICS.length;
     const learned = TOPICS.filter(t => (m[t.id] || 0) >= 0.7).length;
     const inProgress = TOPICS.filter(t => {
@@ -65,7 +68,7 @@
     });
 
     const tbody = document.getElementById('history-tbody');
-    const h = Storage.getHistory();
+    const h = await Storage.getHistory();
     h.slice().reverse().slice(0, 50).forEach(r => {
       const tr = document.createElement('tr');
       tr.style.borderBottom = '1px solid var(--bg-3)';
@@ -83,12 +86,13 @@
       tbody.appendChild(tr);
     });
 
-    document.getElementById('reset-btn').onclick = () => {
+    document.getElementById('reset-btn').onclick = async () => {
       if (confirm('Сбросить весь прогресс?')) {
-        Storage.resetProgress();
+        await Storage.resetProgress();
         location.reload();
       }
     };
+  })();
   </script>
 </body>
 </html>
