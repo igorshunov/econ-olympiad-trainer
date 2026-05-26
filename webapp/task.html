@@ -20,21 +20,24 @@
           </div>
           <div class="task-text" id="task-text"></div>
           <div id="solution-box"></div>
-          <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
-            <button id="reveal-btn">Показать разбор</button>
-            <button class="btn-secondary" id="skip-btn">Пропустить →</button>
+          <div style="margin-top:18px">
+            <button id="reveal-btn" class="btn-secondary">Показать разбор</button>
           </div>
         </div>
 
-        <div class="card" id="feedback-card" style="display:none">
-          <h3>Как для вас была эта задача?</h3>
-          <p class="muted">Решали на бумаге. Оцените сами — это настроит подбор следующих задач.</p>
+        <div class="card" id="feedback-card">
+          <h3>Что дальше?</h3>
+          <p class="muted">Решали на бумаге. Скажите, как было — это настроит подбор следующих задач.</p>
           <div class="feedback-buttons">
             <button class="btn-success" data-action="solved">✓ Решил уверенно</button>
             <button class="btn-warn" data-action="too_easy">↑ Слишком просто</button>
             <button class="btn-danger" data-action="failed">✗ Не смог решить</button>
             <button class="btn-secondary" data-action="too_hard">↓ Слишком сложно</button>
           </div>
+          <p class="muted" style="font-size:12px;margin-top:14px">
+            <b>«Слишком просто»</b> — увеличит сложность и уведёт к темам, для которых эта — пререквизит.<br>
+            <b>«Слишком сложно»</b> — снизит сложность и вернёт к пререквизитам.
+          </p>
         </div>
       </div>
 
@@ -67,23 +70,22 @@
 
     let currentTask = null;
     let currentTopic = null;
-    let revealed = false;
 
-    async function loadNext(prefer) {
+    async function loadNext(prefer, excludeId) {
       const chosen = sessionStorage.getItem('next_topic');
       let task, topic;
       if (chosen) {
         sessionStorage.removeItem('next_topic');
-        topic = Engine.topicById(chosen);
         const hist = await Storage.getHistory();
         const recent = hist.slice(-5).map(h => h.taskId);
-        task = Engine.pickTask(chosen, recent);
+        if (excludeId) recent.push(excludeId);
+        const r = Engine.pickTaskAndTopic(chosen, recent);
+        topic = r.topic; task = r.task;
       } else {
-        ({ topic, task } = await Engine.nextRecommendation(prefer));
+        ({ topic, task } = await Engine.nextRecommendation(prefer, excludeId));
       }
       currentTask = task;
       currentTopic = topic;
-      revealed = false;
       await renderTask();
     }
 
@@ -94,7 +96,6 @@
       const m = Engine.getMastery(currentTopic.id);
       document.getElementById('mastery-tag').textContent = 'Mastery: ' + Math.round(m*100) + '%';
 
-      // Source tag
       const srcTag = document.getElementById('source-tag');
       if (currentTask.source) {
         const s = currentTask.source;
@@ -106,29 +107,32 @@
 
       document.getElementById('task-text').textContent = currentTask.text;
       document.getElementById('solution-box').innerHTML = '';
-      document.getElementById('feedback-card').style.display = 'none';
       document.getElementById('reveal-btn').disabled = false;
       document.getElementById('reveal-btn').textContent = 'Показать разбор';
 
       const prereqs = Engine.upstream(currentTopic.id).map(p => Engine.topicById(p).name);
       document.getElementById('prereq-hint').textContent = prereqs.length
-        ? "Эта тема опирается на: " + prereqs.join(", ")
-        : "Это базовая тема, без пререквизитов.";
+        ? 'Эта тема опирается на: ' + prereqs.join(', ')
+        : 'Это базовая тема, без пререквизитов.';
       const downs = Engine.downstream(currentTopic.id).map(d => Engine.topicById(d).name);
       document.getElementById('downstream-hint').textContent = downs.length
-        ? "Дальше она ведёт к: " + downs.join(", ")
-        : "Это узловая тема (нет downstream).";
+        ? 'Дальше она ведёт к: ' + downs.join(', ')
+        : 'Это узловая тема (нет downstream).';
 
       const h = await Storage.getHistory();
       const today = h.filter(x => Date.now() - x.ts < 86400000);
       document.getElementById('session-stats').textContent =
-        "Решено за 24ч: " + today.length + " задач(и)";
+        'Решено за 24ч: ' + today.length + ' задач(и)';
     }
 
     document.getElementById('reveal-btn').onclick = () => {
-      if (revealed) { loadNext(); return; }
-      revealed = true;
       const box = document.getElementById('solution-box');
+      if (box.innerHTML) {
+        // уже открыт — закрываем
+        box.innerHTML = '';
+        document.getElementById('reveal-btn').textContent = 'Показать разбор';
+        return;
+      }
       const ans = currentTask.answer
         ? `<div class="explanation"><b>Ответ:</b> ${escapeHtml(currentTask.answer)}</div>`
         : '';
@@ -136,19 +140,22 @@
         ? `<div class="explanation" style="background:#0f3a1f30;border-left-color:#10b981;white-space:pre-wrap">${escapeHtml(currentTask.solution)}</div>`
         : '';
       box.innerHTML = ans + sol;
-      document.getElementById('reveal-btn').textContent = 'Следующая задача →';
-      document.getElementById('feedback-card').style.display = 'block';
+      document.getElementById('reveal-btn').textContent = 'Скрыть разбор';
     };
-
-    document.getElementById('skip-btn').onclick = () => loadNext();
 
     document.querySelectorAll('#feedback-card button').forEach(btn => {
       btn.onclick = async () => {
         const action = btn.dataset.action;
+        const taskIdBefore = currentTask.id;
         const prefer = await Engine.recordAttempt(
-          currentTask.id, currentTopic.id, action, null);
-        UI.toast('Прогресс сохранён');
-        await loadNext(prefer);
+          taskIdBefore, currentTopic.id, action, null);
+        UI.toast({
+          solved:  'Прогресс +. Подбираю чуть сложнее.',
+          too_easy:'Перехожу к более сложным темам.',
+          failed:  'Прогресс −. Возвращаюсь к пререквизитам.',
+          too_hard:'Возвращаюсь к более простой теме.',
+        }[action] || 'Прогресс сохранён');
+        await loadNext(prefer, taskIdBefore);
       };
     });
 

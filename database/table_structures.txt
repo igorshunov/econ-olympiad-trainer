@@ -1,0 +1,208 @@
+============================================================
+TABLE: users
+============================================================
+                                                                      Table "public.users"
+    Column     |           Type           | Collation | Nullable |                Default                 | Storage  | Compression | Stats target | Description 
+---------------+--------------------------+-----------+----------+----------------------------------------+----------+-------------+--------------+-------------
+ user_id       | integer                  |           | not null | nextval('users_user_id_seq'::regclass) | plain    |             |              | 
+ email         | character varying(255)   |           | not null |                                        | extended |             |              | 
+ password_hash | character varying(255)   |           | not null |                                        | extended |             |              | 
+ display_name  | character varying(120)   |           | not null |                                        | extended |             |              | 
+ role          | character varying(20)    |           | not null | 'student'::character varying           | extended |             |              | 
+ created_at    | timestamp with time zone |           | not null | now()                                  | plain    |             |              | 
+ last_login_at | timestamp with time zone |           |          |                                        | plain    |             |              | 
+Indexes:
+    "users_pkey" PRIMARY KEY, btree (user_id)
+    "idx_users_role" btree (role)
+    "users_email_key" UNIQUE CONSTRAINT, btree (email)
+Check constraints:
+    "users_role_check" CHECK (role::text = ANY (ARRAY['student'::character varying, 'tutor'::character varying, 'admin'::character varying]::text[]))
+Referenced by:
+    TABLE "attempts" CONSTRAINT "attempts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    TABLE "user_mastery" CONSTRAINT "user_mastery_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+Access method: heap
+
+
+============================================================
+TABLE: topics
+============================================================
+                                                    Table "public.topics"
+   Column    |          Type          | Collation | Nullable | Default | Storage  | Compression | Stats target | Description 
+-------------+------------------------+-----------+----------+---------+----------+-------------+--------------+-------------
+ topic_id    | character varying(40)  |           | not null |         | extended |             |              | 
+ name        | character varying(160) |           | not null |         | extended |             |              | 
+ description | text                   |           |          |         | extended |             |              | 
+ difficulty  | smallint               |           | not null |         | plain    |             |              | 
+ section     | character varying(60)  |           | not null |         | extended |             |              | 
+Indexes:
+    "topics_pkey" PRIMARY KEY, btree (topic_id)
+    "idx_topics_section" btree (section)
+Check constraints:
+    "topics_difficulty_check" CHECK (difficulty >= 1 AND difficulty <= 5)
+    "topics_section_check" CHECK (section::text = ANY (ARRAY['intro'::character varying, 'micro'::character varying, 'macro'::character varying, 'finance'::character varying, 'game-theory'::character varying]::text[]))
+Referenced by:
+    TABLE "task_topics" CONSTRAINT "task_topics_topic_id_fkey" FOREIGN KEY (topic_id) REFERENCES topics(topic_id) ON DELETE CASCADE
+    TABLE "topic_prereqs" CONSTRAINT "topic_prereqs_prereq_id_fkey" FOREIGN KEY (prereq_id) REFERENCES topics(topic_id) ON DELETE CASCADE
+    TABLE "topic_prereqs" CONSTRAINT "topic_prereqs_topic_id_fkey" FOREIGN KEY (topic_id) REFERENCES topics(topic_id) ON DELETE CASCADE
+    TABLE "user_mastery" CONSTRAINT "user_mastery_topic_id_fkey" FOREIGN KEY (topic_id) REFERENCES topics(topic_id) ON DELETE CASCADE
+Access method: heap
+
+
+============================================================
+TABLE: topic_prereqs
+============================================================
+                                               Table "public.topic_prereqs"
+  Column   |         Type          | Collation | Nullable | Default | Storage  | Compression | Stats target | Description 
+-----------+-----------------------+-----------+----------+---------+----------+-------------+--------------+-------------
+ prereq_id | character varying(40) |           | not null |         | extended |             |              | 
+ topic_id  | character varying(40) |           | not null |         | extended |             |              | 
+Indexes:
+    "topic_prereqs_pkey" PRIMARY KEY, btree (prereq_id, topic_id)
+    "idx_prereq_topic" btree (topic_id)
+Check constraints:
+    "topic_prereqs_check" CHECK (prereq_id::text <> topic_id::text)
+Foreign-key constraints:
+    "topic_prereqs_prereq_id_fkey" FOREIGN KEY (prereq_id) REFERENCES topics(topic_id) ON DELETE CASCADE
+    "topic_prereqs_topic_id_fkey" FOREIGN KEY (topic_id) REFERENCES topics(topic_id) ON DELETE CASCADE
+Access method: heap
+
+
+============================================================
+TABLE: sources
+============================================================
+                                                                     Table "public.sources"
+    Column    |          Type          | Collation | Nullable |                  Default                   | Storage  | Compression | Stats target | Description 
+--------------+------------------------+-----------+----------+--------------------------------------------+----------+-------------+--------------+-------------
+ source_id    | integer                |           | not null | nextval('sources_source_id_seq'::regclass) | plain    |             |              | 
+ title        | character varying(200) |           | not null |                                            | extended |             |              | 
+ organization | character varying(120) |           |          |                                            | extended |             |              | 
+ year         | smallint               |           |          |                                            | plain    |             |              | 
+ url          | character varying(500) |           |          |                                            | extended |             |              | 
+Indexes:
+    "sources_pkey" PRIMARY KEY, btree (source_id)
+Check constraints:
+    "sources_year_check" CHECK (year IS NULL OR year >= 1990 AND year <= 2100)
+Referenced by:
+    TABLE "tasks" CONSTRAINT "tasks_source_id_fkey" FOREIGN KEY (source_id) REFERENCES sources(source_id) ON DELETE SET NULL
+Access method: heap
+
+
+============================================================
+TABLE: tasks
+============================================================
+                                                                     Table "public.tasks"
+   Column    |           Type           | Collation | Nullable |                Default                 | Storage  | Compression | Stats target | Description 
+-------------+--------------------------+-----------+----------+----------------------------------------+----------+-------------+--------------+-------------
+ task_id     | integer                  |           | not null | nextval('tasks_task_id_seq'::regclass) | plain    |             |              | 
+ title       | character varying(200)   |           | not null |                                        | extended |             |              | 
+ body_md     | text                     |           | not null |                                        | extended |             |              | 
+ answer      | text                     |           | not null |                                        | extended |             |              | 
+ explanation | text                     |           |          |                                        | extended |             |              | 
+ difficulty  | smallint                 |           | not null |                                        | plain    |             |              | 
+ type        | character varying(20)    |           | not null | 'choice'::character varying            | extended |             |              | 
+ source_id   | integer                  |           |          |                                        | plain    |             |              | 
+ created_at  | timestamp with time zone |           | not null | now()                                  | plain    |             |              | 
+Indexes:
+    "tasks_pkey" PRIMARY KEY, btree (task_id)
+    "idx_tasks_difficulty" btree (difficulty)
+    "idx_tasks_source" btree (source_id)
+Check constraints:
+    "tasks_difficulty_check" CHECK (difficulty >= 1 AND difficulty <= 5)
+    "tasks_type_check" CHECK (type::text = ANY (ARRAY['choice'::character varying, 'short'::character varying, 'numeric'::character varying, 'open'::character varying]::text[]))
+Foreign-key constraints:
+    "tasks_source_id_fkey" FOREIGN KEY (source_id) REFERENCES sources(source_id) ON DELETE SET NULL
+Referenced by:
+    TABLE "attempts" CONSTRAINT "attempts_task_id_fkey" FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
+    TABLE "task_topics" CONSTRAINT "task_topics_task_id_fkey" FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
+Access method: heap
+
+
+============================================================
+TABLE: task_topics
+============================================================
+                                                Table "public.task_topics"
+   Column   |         Type          | Collation | Nullable | Default | Storage  | Compression | Stats target | Description 
+------------+-----------------------+-----------+----------+---------+----------+-------------+--------------+-------------
+ task_id    | integer               |           | not null |         | plain    |             |              | 
+ topic_id   | character varying(40) |           | not null |         | extended |             |              | 
+ is_primary | boolean               |           | not null | false   | plain    |             |              | 
+Indexes:
+    "task_topics_pkey" PRIMARY KEY, btree (task_id, topic_id)
+    "idx_task_topics_topic" btree (topic_id)
+Foreign-key constraints:
+    "task_topics_task_id_fkey" FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
+    "task_topics_topic_id_fkey" FOREIGN KEY (topic_id) REFERENCES topics(topic_id) ON DELETE CASCADE
+Access method: heap
+
+
+============================================================
+TABLE: user_mastery
+============================================================
+                                                 Table "public.user_mastery"
+   Column   |           Type           | Collation | Nullable | Default | Storage  | Compression | Stats target | Description 
+------------+--------------------------+-----------+----------+---------+----------+-------------+--------------+-------------
+ user_id    | integer                  |           | not null |         | plain    |             |              | 
+ topic_id   | character varying(40)    |           | not null |         | extended |             |              | 
+ mastery    | real                     |           | not null | 0.0     | plain    |             |              | 
+ updated_at | timestamp with time zone |           | not null | now()   | plain    |             |              | 
+Indexes:
+    "user_mastery_pkey" PRIMARY KEY, btree (user_id, topic_id)
+Check constraints:
+    "user_mastery_mastery_check" CHECK (mastery >= 0.0::double precision AND mastery <= 1.0::double precision)
+Foreign-key constraints:
+    "user_mastery_topic_id_fkey" FOREIGN KEY (topic_id) REFERENCES topics(topic_id) ON DELETE CASCADE
+    "user_mastery_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+Access method: heap
+
+
+============================================================
+TABLE: attempts
+============================================================
+                                                                       Table "public.attempts"
+    Column    |           Type           | Collation | Nullable |                   Default                    | Storage  | Compression | Stats target | Description 
+--------------+--------------------------+-----------+----------+----------------------------------------------+----------+-------------+--------------+-------------
+ attempt_id   | bigint                   |           | not null | nextval('attempts_attempt_id_seq'::regclass) | plain    |             |              | 
+ user_id      | integer                  |           | not null |                                              | plain    |             |              | 
+ task_id      | integer                  |           | not null |                                              | plain    |             |              | 
+ submitted_at | timestamp with time zone |           | not null | now()                                        | plain    |             |              | 
+ is_correct   | boolean                  |           | not null |                                              | plain    |             |              | 
+ feedback     | character varying(20)    |           | not null |                                              | extended |             |              | 
+ time_spent_s | integer                  |           |          |                                              | plain    |             |              | 
+Indexes:
+    "attempts_pkey" PRIMARY KEY, btree (attempt_id)
+    "idx_attempts_feedback" btree (feedback)
+    "idx_attempts_task" btree (task_id)
+    "idx_attempts_user_time" btree (user_id, submitted_at DESC)
+Check constraints:
+    "attempts_feedback_check" CHECK (feedback::text = ANY (ARRAY['solved'::character varying, 'failed'::character varying, 'too_easy'::character varying, 'too_hard'::character varying, 'skipped'::character varying]::text[]))
+    "attempts_time_spent_s_check" CHECK (time_spent_s IS NULL OR time_spent_s >= 0)
+Foreign-key constraints:
+    "attempts_task_id_fkey" FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
+    "attempts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+Access method: heap
+
+
+============================================================
+VIEW: v_user_profile
+============================================================
+                                    View "public.v_user_profile"
+     Column      |          Type          | Collation | Nullable | Default | Storage  | Description 
+-----------------+------------------------+-----------+----------+---------+----------+-------------
+ user_id         | integer                |           |          |         | plain    | 
+ display_name    | character varying(120) |           |          |         | extended | 
+ tasks_attempted | bigint                 |           |          |         | plain    | 
+ tasks_solved    | bigint                 |           |          |         | plain    | 
+ avg_mastery     | numeric                |           |          |         | main     | 
+ topics_mastered | bigint                 |           |          |         | plain    | 
+View definition:
+ SELECT u.user_id,
+    u.display_name,
+    count(DISTINCT a.task_id) AS tasks_attempted,
+    count(DISTINCT a.task_id) FILTER (WHERE a.is_correct) AS tasks_solved,
+    round(avg(um.mastery)::numeric, 3) AS avg_mastery,
+    count(*) FILTER (WHERE um.mastery >= 0.7::double precision) AS topics_mastered
+   FROM users u
+     LEFT JOIN attempts a ON a.user_id = u.user_id
+     LEFT JOIN user_mastery um ON um.user_id = u.user_id
+  GROUP BY u.user_id, u.display_name;
+
